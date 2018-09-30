@@ -131,11 +131,12 @@ namespace Daemon.EntityFramework.Core
         }
         public virtual List<EntityEntry<TEntity>> UpdateRange(IEnumerable<TEntity> ts)
         {
-            return ts.Select(p =>
+            var list = new List<EntityEntry<TEntity>>();
+            foreach (var t in ts)
             {
-                this.entityDict[p].EntityState = EntityState.Update;
-                return this.entityDict[p];
-            }).ToList();
+                list.Add(Update(t));
+            }
+            return list;
         }
         public virtual void SaveChanges()
         {

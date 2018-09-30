@@ -109,8 +109,8 @@ namespace Daemon.EntityFramework.Core.AbstractClasses
             if (expression is BinaryExpression)
             {
                 var binExp = expression as BinaryExpression;
-                var left = Where(binExp.Left);
-                var right = Where(binExp.Right);
+                var left = OrderBy(binExp.Left);
+                var right = OrderBy(binExp.Right);
                 return $"{left}  ,  {right}";
             }
             else if (expression is BlockExpression)
