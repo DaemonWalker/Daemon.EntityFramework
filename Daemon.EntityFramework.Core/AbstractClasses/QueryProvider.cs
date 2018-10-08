@@ -8,7 +8,14 @@ namespace Daemon.EntityFramework.Core.AbstractClasses
 {
     public abstract class QueryProvider<T> : IQueryProvider
     {
-        DataOperator DataOperator = DefSettings.DataOperator;
+        public DefSettings DefSettings { get; set; }
+        DataOperator DataOperator
+        {
+            get
+            {
+                return this.DefSettings.DataOperator;
+            }
+        }
         public virtual IQueryable CreateQuery(Expression expression)
         {
             throw new NotImplementedException();

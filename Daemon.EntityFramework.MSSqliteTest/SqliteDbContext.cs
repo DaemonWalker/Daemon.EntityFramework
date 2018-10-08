@@ -1,12 +1,21 @@
 ﻿using Daemon.EntityFramework.Core;
 using Daemon.EntityFramework.MSSqliteTest.Entities;
+using Daemon.EntityFramework.MSSqliteTest.Sqlite;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
 namespace Daemon.EntityFramework.MSSqliteTest
 {
-    class SqliteDbContext:DBContext<TEST_TABLE>
+    class SqliteDbContext : DBContext
     {
+        public DBTable<TEST_TABLE> TEST_TABLE { get; set; }
+        public SqliteDbContext() : base(
+            new DefSettings()
+            {
+                DataBaseType = typeof(SqliteDataBase),
+                EntityDBConvertType = typeof(SqliteEntityDBConvert)
+            })
+        { }
     }
 }

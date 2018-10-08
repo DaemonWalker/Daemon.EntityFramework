@@ -7,6 +7,7 @@ namespace Daemon.EntityFramework.Core.AbstractClasses
 {
     public abstract class ExpressionAnalyze
     {
+        public DefSettings DefSettings { get; set; }
         public virtual string Where(Expression expression)
         {
             if (expression == null)

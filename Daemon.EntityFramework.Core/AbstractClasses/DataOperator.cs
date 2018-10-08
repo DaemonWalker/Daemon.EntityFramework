@@ -9,11 +9,8 @@ namespace Daemon.EntityFramework.Core.AbstractClasses
 {
     public abstract class DataOperator
     {
-        public DataOperator()
-        {
-            this.DataBase = DefSettings.DataBase;
-        }
-        protected DataBase DataBase { get; set; }
+        protected DataBase DataBase { get { return DefSettings.DataBase; } }
+        public DefSettings DefSettings { get; set; }
         public virtual List<T> QueryObject<T>(string sql)
         {
             var list = new List<T>();

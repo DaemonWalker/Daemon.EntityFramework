@@ -10,19 +10,26 @@ namespace Daemon.EntityFramework.Core
 {
     public class DefSettings
     {
-        public static PrimaryKeyAttribute PrimaryKeyAttribute { get; set; } = new PrimaryKeyAttribute();
+        public PrimaryKeyAttribute PrimaryKeyAttribute { get; set; } = new PrimaryKeyAttribute();
 
-        public static Type DataOperatorType { get; set; } = typeof(Daemon.EntityFramework.Core.Demo.DataOperator);
-        public static DataOperator DataOperator
+        public Type DataOperatorType { get; set; } = typeof(Daemon.EntityFramework.Core.Demo.DataOperator);
+        private DataOperator dataOperator;
+        public DataOperator DataOperator
         {
             get
             {
-                return Activator.CreateInstance(DataOperatorType) as DataOperator;
+                if (dataOperator == null)
+                {
+                    dataOperator = Activator.CreateInstance(DataOperatorType) as DataOperator;
+                    dataOperator.DefSettings = this;
+                }
+                return dataOperator;
             }
         }
 
-        public static Type DataBaseType { get; set; }
-        public static DataBase DataBase
+        public Type DataBaseType { get; set; }
+        private DataBase dataBase;
+        public DataBase DataBase
         {
             get
             {
@@ -30,11 +37,17 @@ namespace Daemon.EntityFramework.Core
                 {
                     throw new Exception("No DataBase");
                 }
-                return Activator.CreateInstance(DataBaseType) as DataBase;
+                if (dataBase == null)
+                {
+                    dataBase = Activator.CreateInstance(DataBaseType) as DataBase;
+                    dataBase.DefSettings = this;
+                }
+                return dataBase;
             }
         }
-        public static Type EntityDBConvertType { get; set; }
-        public static EntityDBConvert EntityDBConvert
+        public Type EntityDBConvertType { get; set; }
+        private EntityDBConvert entityDBConvert;
+        public EntityDBConvert EntityDBConvert
         {
             get
             {
@@ -42,29 +55,49 @@ namespace Daemon.EntityFramework.Core
                 {
                     throw new Exception("No EntityDBConvert");
                 }
-                return Activator.CreateInstance(EntityDBConvertType) as EntityDBConvert;
+                if (entityDBConvert == null)
+                {
+                    entityDBConvert = Activator.CreateInstance(EntityDBConvertType) as EntityDBConvert;
+                    entityDBConvert.DefSettings = this;
+                }
+                return entityDBConvert;
             }
         }
-        public static Type QueryProviderType { get; set; } = typeof(Daemon.EntityFramework.Core.Demo.QueryProvider<>);
-        public static QueryProvider<TEntity> GetQueryProvider<TEntity>()
+        public Type QueryProviderType { get; set; } = typeof(Daemon.EntityFramework.Core.Demo.QueryProvider<>);
+        private Dictionary<Type, object> dictQueryPrivider = new Dictionary<Type, object>();
+        public QueryProvider<TEntity> GetQueryProvider<TEntity>()
         {
-            var qp = QueryProviderType.MakeGenericType(typeof(TEntity));
-            return (Activator.CreateInstance(qp) as QueryProvider<TEntity>);
+            if (dictQueryPrivider.ContainsKey(typeof(TEntity)) == false)
+            {
+                var qpType = QueryProviderType.MakeGenericType(typeof(TEntity));
+                var qp = (Activator.CreateInstance(qpType) as QueryProvider<TEntity>);
+                qp.DefSettings = this;
+                dictQueryPrivider.Add(typeof(TEntity), qp);
+            }
+            var obj = dictQueryPrivider[typeof(TEntity)];
+            return obj as QueryProvider<TEntity>;
         }
 
-        public static ExpressionAnalyze ExpressionAnalyze { get; set; } = new Daemon.EntityFramework.Core.Demo.ExpressionAnalyze();
+        public ExpressionAnalyze ExpressionAnalyze { get; set; } = new Daemon.EntityFramework.Core.Demo.ExpressionAnalyze();
 
-        public static Type QueryType { get; set; } = typeof(Daemon.EntityFramework.Core.Demo.Query<>);
-        public static Query<TElement> GetQuery<TElement>()
+        public Type QueryType { get; set; } = typeof(Daemon.EntityFramework.Core.Demo.Query<>);
+        private Dictionary<Type, object> dictQuery = new Dictionary<Type, object>();
+        public Query<TElement> GetQuery<TElement>()
         {
-            var q = QueryType.MakeGenericType(typeof(TElement));
-            return (Activator.CreateInstance(q) as Query<TElement>);
+            if (dictQuery.ContainsKey(typeof(TElement)) == false)
+            {
+                var qType = QueryType.MakeGenericType(typeof(TElement));
+                var q = (Activator.CreateInstance(qType) as Query<TElement>);
+                q.DefSettings = this;
+                dictQuery.Add(typeof(TElement), q);
+            }
+            return dictQuery[typeof(TElement)] as Query<TElement>;
         }
-        public static Type GetPKAttrType
+        public Type GetPKAttrType
         {
             get
             {
-                return DefSettings.PrimaryKeyAttribute.GetType();
+                return PrimaryKeyAttribute.GetType();
             }
         }
     }

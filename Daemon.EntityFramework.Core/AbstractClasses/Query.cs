@@ -9,17 +9,16 @@ namespace Daemon.EntityFramework.Core.AbstractClasses
 {
     public abstract class Query<TEntity> : IQueryable<TEntity>, IOrderedQueryable<TEntity>
     {
-        private readonly IQueryProvider queryProvider;
+        public DefSettings DefSettings { get; set; }
+        private IQueryProvider queryProvider { get { return DefSettings.GetQueryProvider<TEntity>(); } }
         private readonly Expression expression;
         public Query(IQueryProvider queryProvider, Expression expression)
         {
-            this.queryProvider = queryProvider;
             this.expression = expression;
         }
 
         public Query()
         {
-            this.queryProvider = DefSettings.GetQueryProvider<TEntity>();
             this.expression = Expression.Constant(this);
         }
 

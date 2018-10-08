@@ -12,6 +12,7 @@ namespace Daemon.EntityFramework.Core.AbstractClasses
         public abstract DbDataReader GetDataReader();
         public abstract DbCommand GetCommand(bool openTranscation);
         public abstract DbDataAdapter GetDataAdapter();
+        public DefSettings DefSettings { get; set; }
 
         public void Dispose()
         {

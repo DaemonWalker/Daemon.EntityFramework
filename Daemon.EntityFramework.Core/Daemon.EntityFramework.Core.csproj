@@ -2,6 +2,16 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <Authors>Daemon Walker</Authors>
+    <Company>jjj</Company>
+    <Description>A Simple ORM Demo</Description>
+    <PackageProjectUrl>https://github.com/DaemonWalker/Daemon.EntityFramework</PackageProjectUrl>
+    <RepositoryType>git</RepositoryType>
+    <Version>0.2.0</Version>
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CSharp" Version="4.5.0" />
+  </ItemGroup>
 
 </Project>
