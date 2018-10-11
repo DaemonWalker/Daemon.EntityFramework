@@ -12,25 +12,10 @@ namespace Daemon.EntityFramework.Core
 {
     public class DefSettings
     {
-        public PrimaryKeyAttribute PrimaryKeyAttribute { get; set; } = new PrimaryKeyAttribute();
-
-        public Type DataOperatorType { get; set; } = typeof(Daemon.EntityFramework.Core.Demo.DataOperator);
-        private DataOperator dataOperator;
-        public DataOperator DataOperator
-        {
-            get
-            {
-                if (dataOperator == null)
-                {
-                    dataOperator = Activator.CreateInstance(DataOperatorType) as DataOperator;
-                    dataOperator.DefSettings = this;
-                }
-                return dataOperator;
-            }
-        }
-
-        public Type DataBaseType { get; set; }
         private DataBase dataBase;
+        private DataOperator dataOperator;
+        private Dictionary<Type, object> dictQueryPrivider = new Dictionary<Type, object>();
+        private EntityDBConvert entityDBConvert;
         public DataBase DataBase
         {
             get
@@ -47,8 +32,22 @@ namespace Daemon.EntityFramework.Core
                 return dataBase;
             }
         }
-        public Type EntityDBConvertType { get; set; }
-        private EntityDBConvert entityDBConvert;
+
+        public Type DataBaseType { get; set; }
+        public DataOperator DataOperator
+        {
+            get
+            {
+                if (dataOperator == null)
+                {
+                    dataOperator = Activator.CreateInstance(DataOperatorType) as DataOperator;
+                    dataOperator.DefSettings = this;
+                }
+                return dataOperator;
+            }
+        }
+
+        public Type DataOperatorType { get; set; } = typeof(Daemon.EntityFramework.Core.Demo.DataOperator);
         public EntityDBConvert EntityDBConvert
         {
             get
@@ -65,23 +64,21 @@ namespace Daemon.EntityFramework.Core
                 return entityDBConvert;
             }
         }
-        public Type QueryProviderType { get; set; } = typeof(Daemon.EntityFramework.Core.Demo.QueryProvider<>);
-        private Dictionary<Type, object> dictQueryPrivider = new Dictionary<Type, object>();
-        public QueryProvider<TEntity> GetQueryProvider<TEntity>()
+
+        public Type EntityDBConvertType { get; set; }
+        public ExpressionAnalyze ExpressionAnalyze { get; set; } = new Daemon.EntityFramework.Core.Demo.ExpressionAnalyze();
+        public Type GetPKAttrType
         {
-            if (dictQueryPrivider.ContainsKey(typeof(TEntity)) == false)
+            get
             {
-                var qpType = QueryProviderType.MakeGenericType(typeof(TEntity));
-                var qp = (Activator.CreateInstance(qpType) as QueryProvider<TEntity>);
-                qp.DefSettings = this;
-                dictQueryPrivider.Add(typeof(TEntity), qp);
+                return PrimaryKeyAttribute.GetType();
             }
-            var obj = dictQueryPrivider[typeof(TEntity)];
-            return obj as QueryProvider<TEntity>;
         }
 
-        public ExpressionAnalyze ExpressionAnalyze { get; set; } = new Daemon.EntityFramework.Core.Demo.ExpressionAnalyze();
-
+        public Action<string> OutputAction { get; set; } = sql => Console.WriteLine(sql);
+        public bool OutputSql { get; set; }
+        public PrimaryKeyAttribute PrimaryKeyAttribute { get; set; } = new PrimaryKeyAttribute();
+        public Type QueryProviderType { get; set; } = typeof(Daemon.EntityFramework.Core.Demo.QueryProvider<>);
         public Type QueryType { get; set; } = typeof(Daemon.EntityFramework.Core.Demo.Query<>);
         public Query<TElement> GetQuery<TElement>()
         {
@@ -98,12 +95,18 @@ namespace Daemon.EntityFramework.Core
             q.DefSettings = this;
             return q;
         }
-        public Type GetPKAttrType
+
+        public QueryProvider<TEntity> GetQueryProvider<TEntity>()
         {
-            get
+            if (dictQueryPrivider.ContainsKey(typeof(TEntity)) == false)
             {
-                return PrimaryKeyAttribute.GetType();
+                var qpType = QueryProviderType.MakeGenericType(typeof(TEntity));
+                var qp = (Activator.CreateInstance(qpType) as QueryProvider<TEntity>);
+                qp.DefSettings = this;
+                dictQueryPrivider.Add(typeof(TEntity), qp);
             }
+            var obj = dictQueryPrivider[typeof(TEntity)];
+            return obj as QueryProvider<TEntity>;
         }
     }
 }

@@ -159,7 +159,7 @@ SELECT {pkProp.Name}
                 }
                 sql.Length = sql.Length - 4;
             }
-            return dataOperator.QueryObject<TResult>(sql.ToString());
+            return dataOperator.Query<TResult>(sql.ToString());
         }
 
         public override List<T> Select<T>(LambdaExpression where, LambdaExpression orderBy, ConstantExpression take)
@@ -178,7 +178,7 @@ select * from {tableName}
                 sql.Append($@"
  limit 0, {DefSettings.ExpressionAnalyze.OrderBy(take)}");
             }
-            return dataOperator.QueryObject<T>(sql.ToString());
+            return dataOperator.Query<T>(sql.ToString());
         }
 
         public override object Sum<T>(Expression where, Expression prop)

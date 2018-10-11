@@ -9,23 +9,7 @@ namespace Daemon.EntityFramework.Core.AbstractClasses
 {
     public abstract class Query<TEntity> : IQueryable<TEntity>, IOrderedQueryable<TEntity>
     {
-        public DefSettings DefSettings { get; set; }
         protected IQueryProvider _queryProvider;
-        protected IQueryProvider queryProvider
-        {
-            set
-            {
-                this._queryProvider = value;
-            }
-            get
-            {
-                if (this._queryProvider == null)
-                {
-                    this._queryProvider = this.DefSettings.GetQueryProvider<TEntity>();
-                }
-                return this._queryProvider;
-            }
-        }
         private Expression expression;
         public Query(IQueryProvider queryProvider, Expression expression)
         {
@@ -38,6 +22,7 @@ namespace Daemon.EntityFramework.Core.AbstractClasses
             this.expression = Expression.Constant(this);
         }
 
+        public DefSettings DefSettings { get; set; }
         public Type ElementType
         {
             get
@@ -62,6 +47,21 @@ namespace Daemon.EntityFramework.Core.AbstractClasses
             }
         }
 
+        protected IQueryProvider queryProvider
+        {
+            set
+            {
+                this._queryProvider = value;
+            }
+            get
+            {
+                if (this._queryProvider == null)
+                {
+                    this._queryProvider = this.DefSettings.GetQueryProvider<TEntity>();
+                }
+                return this._queryProvider;
+            }
+        }
         public virtual IEnumerator<TEntity> GetEnumerator()
         {
             var result = this.queryProvider.Execute<List<TEntity>>(expression);
