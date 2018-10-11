@@ -96,6 +96,95 @@ namespace Daemon.EntityFramework.Core.AbstractClasses
             throw new ArgumentException("Invaild Where Expression!");
         }
 
+        public virtual string Where(Expression expression,
+            IDictionary<string, KeyValuePair<string, string>> colMatchInfo)
+        {
+            if (expression == null)
+            {
+                return " 1 = 1 ";
+            }
+            var bodyProp = expression.GetType().GetProperty("Body");
+            if (bodyProp != null)
+            {
+                expression = bodyProp.GetValue(expression) as Expression;
+            }
+            if (expression is BinaryExpression)
+            {
+                var binExp = expression as BinaryExpression;
+                var left = Where(binExp.Left, colMatchInfo);
+                var right = Where(binExp.Right, colMatchInfo);
+                var op = string.Empty;
+                switch (binExp.NodeType)
+                {
+                    case ExpressionType.Equal:
+                        op = "=";
+                        break;
+                    case ExpressionType.AndAlso:
+                    case ExpressionType.And:
+                        op = "and";
+                        break;
+                    case ExpressionType.OrElse:
+                        op = "or";
+                        break;
+                    case ExpressionType.NotEqual:
+                        op = "!=";
+                        break;
+                    case ExpressionType.GreaterThan:
+                        op = ">";
+                        break;
+                    case ExpressionType.Add:
+                        op = "+";
+                        break;
+                    case ExpressionType.Subtract:
+                        op = "-";
+                        break;
+                    case ExpressionType.Multiply:
+                        op = "*";
+                        break;
+                    case ExpressionType.Divide:
+                        op = "/";
+                        break;
+                    case ExpressionType.LessThan:
+                        op = "<";
+                        break;
+                    case ExpressionType.Modulo:
+                        op = "%";
+                        break;
+                }
+                return $"({left}  {op}  {right})";
+            }
+            else if (expression is MemberExpression)
+            {
+                var memExp = expression as MemberExpression;
+                return $"{colMatchInfo[memExp.Member.Name].Key}.{colMatchInfo[memExp.Member.Name].Value}";
+            }
+            else if (expression is ConstantExpression)
+            {
+                var conExp = expression as ConstantExpression;
+                if (conExp.Type == typeof(string))
+                {
+                    return $"'{conExp.Value.ToString()}'";
+                }
+                else if (conExp.Type == typeof(int))
+                {
+                    return conExp.Value.ToString();
+                }
+                else if (conExp.Type == typeof(bool))
+                {
+                    if (((bool)conExp.Value) == true)
+                    {
+                        return "(1=1)";
+                    }
+                    else
+                    {
+                        return "(1=0)";
+                    }
+                }
+            }
+
+            throw new ArgumentException("Invaild Where Expression!");
+        }
+
         public virtual string OrderBy(Expression expression)
         {
             if (expression == null)

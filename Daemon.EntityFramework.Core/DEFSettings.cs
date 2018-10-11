@@ -3,6 +3,8 @@ using Daemon.EntityFramework.Core.Attrbutes;
 using Daemon.EntityFramework.Core.Exceptions;
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
 
@@ -81,17 +83,20 @@ namespace Daemon.EntityFramework.Core
         public ExpressionAnalyze ExpressionAnalyze { get; set; } = new Daemon.EntityFramework.Core.Demo.ExpressionAnalyze();
 
         public Type QueryType { get; set; } = typeof(Daemon.EntityFramework.Core.Demo.Query<>);
-        private Dictionary<Type, object> dictQuery = new Dictionary<Type, object>();
         public Query<TElement> GetQuery<TElement>()
         {
-            if (dictQuery.ContainsKey(typeof(TElement)) == false)
-            {
-                var qType = QueryType.MakeGenericType(typeof(TElement));
-                var q = (Activator.CreateInstance(qType) as Query<TElement>);
-                q.DefSettings = this;
-                dictQuery.Add(typeof(TElement), q);
-            }
-            return dictQuery[typeof(TElement)] as Query<TElement>;
+            var qType = QueryType.MakeGenericType(typeof(TElement));
+            var q = (Activator.CreateInstance(qType) as Query<TElement>);
+            q.DefSettings = this;
+            return q;
+        }
+
+        public Query<TElement> GetQuery<TElement>(IQueryProvider queryProvider, Expression expression)
+        {
+            var qType = QueryType.MakeGenericType(typeof(TElement));
+            var q = (Activator.CreateInstance(qType, queryProvider, expression) as Query<TElement>);
+            q.DefSettings = this;
+            return q;
         }
         public Type GetPKAttrType
         {

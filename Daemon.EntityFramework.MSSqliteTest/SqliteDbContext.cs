@@ -9,7 +9,8 @@ namespace Daemon.EntityFramework.MSSqliteTest
 {
     class SqliteDbContext : DBContext
     {
-        public DBTable<TEST_TABLE> TEST_TABLE { get; set; }
+        public DBTable<TEST_TABLE> TestTable { get; set; }
+        public DBTable<JOIN_TABLE> JoinTable { get; set; }
         public SqliteDbContext() : base(
             new DefSettings()
             {

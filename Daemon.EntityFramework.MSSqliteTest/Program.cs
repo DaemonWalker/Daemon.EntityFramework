@@ -12,7 +12,7 @@ namespace Daemon.EntityFramework.MSSqliteTest
     {
         static void Main(string[] args)
         {
-            InsertTest();
+            CountTest();
         }
 
         static void InsertTest()
@@ -27,9 +27,21 @@ namespace Daemon.EntityFramework.MSSqliteTest
                 }
                 ShowTime(() =>
                 {
-                    db.TEST_TABLE.AddRange(list);
-                    db.TEST_TABLE.SaveChanges();
+                    db.TestTable.AddRange(list);
+                    db.TestTable.SaveChanges();
                 });
+            }
+        }
+        static void CountTest()
+        {
+            using (var db = new SqliteDbContext())
+            {
+                db.JoinTable.Join(db.TestTable.Where(p => p.TEST_ID > 10000),
+                    p => new { p.TEST_ID },
+                    p => new { p.TEST_ID },
+                    (pl, pr) => new { pl.NAME, pr.TEST_ID }).Where(p => p.NAME == "3").ToList();
+
+                //db.JoinTable.Where(p => p.TEST_ID < 10000).ToList();
             }
         }
         static void ShowTime(Action action)

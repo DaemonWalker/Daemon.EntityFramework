@@ -9,14 +9,23 @@ using System.Text;
 
 namespace Daemon.EntityFramework.MSSqliteTest.Sqlite
 {
-    class SqliteEntityDBConvert:EntityDBConvert
+    class SqliteEntityDBConvert : EntityDBConvert
     {
         public override int Count<T>(Expression where)
         {
-            var sqlTemp = @"
+            var sql = string.Empty;
+            if (where != null)
+            {
+                var sqlTemp = @"
 select count(1) from {0}
  where {1}";
-            var sql = string.Format(sqlTemp, typeof(T).Name, DefSettings.ExpressionAnalyze.Where(where));
+                sql = string.Format(sqlTemp, typeof(T).Name, DefSettings.ExpressionAnalyze.Where(where));
+            }
+            else
+            {
+                var sqlTemp = @"select count(1) from {0}";
+                sql = string.Format(sqlTemp, typeof(T).Name);
+            }
             return (int)Convert.ChangeType(this.dataOperator.ExecuteSclar(sql), typeof(int));
         }
 
@@ -103,6 +112,55 @@ SELECT {pkProp.Name}
             return ts.ToList();
         }
 
+        public override List<TResult> Join<TResult>(
+            IDictionary<string, List<KeyValuePair<string, string>>> joinInfo,
+            IDictionary<string, KeyValuePair<string, string>> selectInfo,
+            IDictionary<string, LambdaExpression> whereInfo,
+            LambdaExpression orderByInfo)
+        {
+            var sql = new StringBuilder("select ");
+            foreach (var kv in selectInfo)
+            {
+                sql.AppendFormat(" {0}.{1} {2},", kv.Value.Key, kv.Value.Value, kv.Key);
+            }
+            sql.Length = sql.Length - 1;
+            var baseTable = joinInfo.First();
+            sql.AppendFormat(" from {0} ", baseTable.Key);
+            for (int i = 1; i < joinInfo.Count(); i++)
+            {
+                var info = joinInfo.ElementAt(i);
+                sql.AppendFormat(" inner join {0} on ", info.Key);
+                for (int k = 0; k < info.Value.Count; k++)
+                {
+                    var temp = info.Value[k];
+                    sql.AppendFormat(
+                        "{0}.{1} = {2}.{3} ",
+                        info.Key,
+                        temp.Value,
+                        baseTable.Key,
+                        baseTable.Value[k].Value);
+                }
+            }
+            if (whereInfo.Count() != 0)
+            {
+                sql.Append("where ");
+                foreach (var lambda in whereInfo)
+                {
+                    if (lambda.Key == "AnonymousType")
+                    {
+                        sql.AppendFormat("{0} and ",
+                            DefSettings.ExpressionAnalyze.Where(
+                                lambda.Value, selectInfo));
+                    }
+                    else
+                    {
+                        sql.AppendFormat("{0} and ", DefSettings.ExpressionAnalyze.Where(lambda.Value));
+                    }
+                }
+                sql.Length = sql.Length - 4;
+            }
+            return dataOperator.QueryObject<TResult>(sql.ToString());
+        }
 
         public override List<T> Select<T>(LambdaExpression where, LambdaExpression orderBy, ConstantExpression take)
         {

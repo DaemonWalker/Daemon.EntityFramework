@@ -15,5 +15,10 @@ namespace Daemon.EntityFramework.Core.AbstractClasses
         public abstract List<T> Select<T>(LambdaExpression where, LambdaExpression orderBy, ConstantExpression take);
         public abstract int Count<T>(Expression where);
         public abstract object Sum<T>(Expression where, Expression prop);
+        public abstract List<TResult> Join<TResult>(
+            IDictionary<string, List<KeyValuePair<string, string>>> joinInfo,
+            IDictionary<string, KeyValuePair<string, string>> selectInfo,
+            IDictionary<string, LambdaExpression> whereInfo,
+            LambdaExpression orderByInfo);
     }
 }

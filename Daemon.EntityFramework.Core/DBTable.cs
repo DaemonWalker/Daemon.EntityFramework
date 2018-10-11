@@ -26,6 +26,11 @@ namespace Daemon.EntityFramework.Core
             entityPKProp = this.GetPKProperty();
 
         }
+
+        public DBTable(IQueryProvider queryProvider,Expression expression)
+        {
+            this.expression = expression;
+        }
         #region 4Select
         private IQueryProvider provider
         {
@@ -34,7 +39,7 @@ namespace Daemon.EntityFramework.Core
                 return DefSettings.GetQueryProvider<TEntity>();
             }
         }
-        private readonly Expression expression;
+        private Expression expression;
         public Type ElementType
         {
             get
