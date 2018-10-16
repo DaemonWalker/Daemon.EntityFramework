@@ -5,12 +5,11 @@ using System.Text;
 
 namespace Daemon.EntityFramework.MSSqliteTest.Entities
 {
-    public class JOIN_TABLE
+    class SUBJECT
     {
         [PrimaryKey]
-        public int JOIN_ID { get; set; }
+        public int SUBJECT_ID { get; set; }
 
-        public int TEST_ID { get; set; }
-        public string NAME { get; set; }
+        public string SUBJECT_NAME { get; set; }
     }
 }

@@ -75,12 +75,13 @@ namespace Daemon.EntityFramework.Core.AbstractClasses
             bool isFirst = true;
 
             //Join连接条件对照
-            Dictionary<string, List<KeyValuePair<string, string>>> joinOnDict = new Dictionary<string, List<KeyValuePair<string, string>>>();
+            Dictionary<Type, List<KeyValuePair<string, string>>> joinOnDict = new Dictionary<Type, List<KeyValuePair<string, string>>>();
             //Join生成新实体对照关系
-            Dictionary<string, KeyValuePair<string, string>> joinSelectDict = null;
+            Dictionary<Type, List<Tuple<string, string, string>>> joinSelectDict = new Dictionary<Type, List<Tuple<string, string, string>>>();
             //Join生成新实体类型
             Type joinSelectType = null;
-            
+
+            var joinSelectList = new List<Tuple<Type, string, Type, string>>();
             //开始分析
             while (methodStack.Count > 0)
             {
@@ -98,9 +99,10 @@ namespace Daemon.EntityFramework.Core.AbstractClasses
                     }
                     var kvLeft = this.JoinOnAnalyze(methodCall.Arguments[2] as UnaryExpression);
                     var kvRight = this.JoinOnAnalyze(methodCall.Arguments[3] as UnaryExpression);
-                    var t = this.JoinSelectAnalyze(methodCall.Arguments[4] as UnaryExpression);
-                    joinSelectDict = t.Item1;
-                    joinSelectType = t.Item2;
+                    var tempList = this.JoinSelectAnalyze(methodCall.Arguments[4] as UnaryExpression);
+                    joinSelectList.AddRange(tempList);
+                    //以第一次的类型为基准输出
+                    joinSelectType = joinSelectType ?? tempList.First().Item1;
                     joinOnDict.Add(kvLeft.Key, kvLeft.Value);
                     joinOnDict.Add(kvRight.Key, kvRight.Value);
                 }
@@ -188,10 +190,64 @@ namespace Daemon.EntityFramework.Core.AbstractClasses
             object result = null;
 
             //多表操作
-            if (joinSelectDict != null)
+            if (joinSelectList.Count > 0)
             {
+                var relationMap = new Dictionary<Tuple<Type, string>, Tuple<Type, string>>();
+                for (var i = joinSelectList.Count - 1; i >= 0; i--)
+                {
+                    var item = joinSelectList[i];
+                    if (item.Item3.IsAnonymousType() == false)
+                    {
+                        relationMap.Add(
+                            new Tuple<Type, string>(item.Item1, item.Item2),
+                            new Tuple<Type, string>(item.Item3, item.Item4));
+                    }
+                    else
+                    {
+                        relationMap.Add(
+                            new Tuple<Type, string>(item.Item1, item.Item2),
+                            relationMap[new Tuple<Type, string>(item.Item3, item.Item4)]);
+                    }
+                }
+                foreach (var joinOn in joinOnDict)
+                {
+                    if (joinOn.Key.IsAnonymousType() == false)
+                    {
+                        continue;
+                    }
+                    foreach (var item in joinOn.Value)
+                    {
+                        var baseTableInfo = relationMap[new Tuple<Type, string>(joinOn.Key, item.Value)];
+                        joinOnDict[baseTableInfo.Item1].Add(new KeyValuePair<string, string>(item.Key, baseTableInfo.Item2));
+                    }
+                }
+                for (int i = joinOnDict.Count - 1; i >= 0; i--)
+                {
+                    if (joinOnDict.Keys.ElementAt(i).IsAnonymousType())
+                    {
+                        joinOnDict.Remove(joinOnDict.Keys.ElementAt(i));
+                    }
+                }
                 var method = convert.GetType().GetMethod("Join").MakeGenericMethod(joinSelectType);
-                result = method.Invoke(convert, new object[] { joinOnDict, joinSelectDict, whereParms, orderbyParm });
+                var selectInfo = new List<Tuple<string, string, string>>();
+                foreach (var item in joinSelectList)
+                {
+                    if (item.Item1 != joinSelectType)
+                    {
+                        continue;
+                    }
+                    Tuple<Type, string> tempItem = null;
+                    if (item.Item3.IsAnonymousType())
+                    {
+                        tempItem = relationMap[new Tuple<Type, string>(item.Item3, item.Item4)];
+                    }
+                    else
+                    {
+                        tempItem = new Tuple<Type, string>(item.Item3, item.Item4);
+                    }
+                    selectInfo.Add(new Tuple<string, string, string>(item.Item2, tempItem.Item2, tempItem.Item1.Name));
+                }
+                result = method.Invoke(convert, new object[] { joinOnDict, selectInfo, whereParms, orderbyParm });
             }
             //单表操作 
             //如果需要排序
@@ -261,7 +317,7 @@ namespace Daemon.EntityFramework.Core.AbstractClasses
         /// </summary>
         /// <param name="unaryExpression"></param>
         /// <returns></returns>
-        protected virtual KeyValuePair<string, List<KeyValuePair<string, string>>> JoinOnAnalyze(UnaryExpression unaryExpression)
+        protected virtual KeyValuePair<Type, List<KeyValuePair<string, string>>> JoinOnAnalyze(UnaryExpression unaryExpression)
         {
             var operand = unaryExpression.Operand as LambdaExpression;
             Type type = null;
@@ -304,7 +360,14 @@ namespace Daemon.EntityFramework.Core.AbstractClasses
                     }
                 }
             }
-            var kv = new KeyValuePair<string, List<KeyValuePair<string, string>>>(type.Name, list);
+            else if (operand.Body is MemberExpression)
+            {
+                var exp = operand.Body as MemberExpression;
+                var propName = exp.Member.Name;
+                list.Add(new KeyValuePair<string, string>(propName, propName));
+                type = exp.Member.DeclaringType;
+            }
+            var kv = new KeyValuePair<Type, List<KeyValuePair<string, string>>>(type, list);
             return kv;
 
         }
@@ -314,10 +377,11 @@ namespace Daemon.EntityFramework.Core.AbstractClasses
         /// </summary>
         /// <param name="unaryExpression"></param>
         /// <returns></returns>
-        protected virtual Tuple<Dictionary<string, KeyValuePair<string, string>>, Type> JoinSelectAnalyze(UnaryExpression unaryExpression)
+        protected virtual List<Tuple<Type, string, Type, string>> JoinSelectAnalyze(
+            UnaryExpression unaryExpression)
         {
             var operand = unaryExpression.Operand as LambdaExpression;
-            var dict = new Dictionary<string, KeyValuePair<string, string>>();
+            var list = new List<Tuple<Type, string, Type, string>>();
             Type type = null;
 
             //实体创建表达式
@@ -330,10 +394,11 @@ namespace Daemon.EntityFramework.Core.AbstractClasses
                 {
                     var newType = bind.Member.Name;
                     var exp = (prop.GetValue(bind) as MemberExpression);
-                    dict.Add(newType,
-                        new KeyValuePair<string, string>(
-                            exp.Member.DeclaringType.Name,
-                            exp.Member.Name));
+                    list.Add(new Tuple<Type, string, Type, string>(
+                        type,
+                        newType,
+                        exp.Member.DeclaringType,
+                        exp.Member.Name));
                 }
             }
             //匿名类创建表达式
@@ -345,13 +410,14 @@ namespace Daemon.EntityFramework.Core.AbstractClasses
                 {
                     var member = body.Members[i];
                     var arg = body.Arguments[i] as MemberExpression;
-                    dict.Add(member.Name,
-                        new KeyValuePair<string, string>(
-                            arg.Member.DeclaringType.Name,
-                            arg.Member.Name));
+                    list.Add(new Tuple<Type, string, Type, string>(
+                        type,
+                        member.Name,
+                        arg.Member.DeclaringType,
+                        arg.Member.Name));
                 }
             }
-            return new Tuple<Dictionary<string, KeyValuePair<string, string>>, Type>(dict, type);
+            return list;
         }
 
         /// <summary>

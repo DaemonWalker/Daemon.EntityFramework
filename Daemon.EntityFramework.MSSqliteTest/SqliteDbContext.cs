@@ -9,13 +9,16 @@ namespace Daemon.EntityFramework.MSSqliteTest
 {
     class SqliteDbContext : DBContext
     {
-        public DBTable<TEST_TABLE> TestTable { get; set; }
-        public DBTable<JOIN_TABLE> JoinTable { get; set; }
+        public DBTable<SCORE> Score { get; set; }
+        public DBTable<CLASS> Class { get; set; }
+        public DBTable<STUDENT> Student { get; set; }
+        public DBTable<SUBJECT> Subject { get; set; }
         public SqliteDbContext() : base(
             new DefSettings()
             {
                 DataBaseType = typeof(SqliteDataBase),
-                EntityDBConvertType = typeof(SqliteEntityDBConvert)
+                EntityDBConvertType = typeof(SqliteEntityDBConvert),
+                OutputSql = true
             })
         { }
     }

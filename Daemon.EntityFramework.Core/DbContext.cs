@@ -19,9 +19,9 @@ namespace Daemon.EntityFramework.Core
                     {
                         prop.SetValue(this, Activator.CreateInstance(prop.PropertyType));
                     }
-                    dynamic obj = prop.GetValue(this);
-                    tables.Add(obj);
-                    obj.DefSettings = defSettings;
+                    var obj = prop.GetValue(this);
+                    tables.Add(obj as IDisposable);
+                    obj.GetType().GetProperty("DefSettings").SetValue(obj, defSettings);
                 }
             }
         }

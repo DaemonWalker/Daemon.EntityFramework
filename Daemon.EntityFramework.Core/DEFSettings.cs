@@ -1,6 +1,7 @@
 ﻿using Daemon.EntityFramework.Core.AbstractClasses;
 using Daemon.EntityFramework.Core.Attrbutes;
 using Daemon.EntityFramework.Core.Exceptions;
+using Daemon.EntityFramework.Core.SqlFormatter;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -75,7 +76,7 @@ namespace Daemon.EntityFramework.Core
             }
         }
 
-        public Action<string> OutputAction { get; set; } = sql => Console.WriteLine(sql);
+        public Action<string> OutputAction { get; set; } = sql => Console.WriteLine(new BasicFormatter().Format(sql));
         public bool OutputSql { get; set; }
         public PrimaryKeyAttribute PrimaryKeyAttribute { get; set; } = new PrimaryKeyAttribute();
         public Type QueryProviderType { get; set; } = typeof(Daemon.EntityFramework.Core.Demo.QueryProvider<>);
@@ -108,5 +109,11 @@ namespace Daemon.EntityFramework.Core
             var obj = dictQueryPrivider[typeof(TEntity)];
             return obj as QueryProvider<TEntity>;
         }
+
+        public string DeleteSqlTemp = @"
+delete from {0}
+where {1}='{2}'";
+
+        public string CountSqlTemp = @"select count(1) from {0}";
     }
 }

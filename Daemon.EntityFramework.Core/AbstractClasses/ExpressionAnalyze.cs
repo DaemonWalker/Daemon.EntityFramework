@@ -1,5 +1,7 @@
-﻿using System;
+﻿using Daemon.EntityFramework.Core.Utils;
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
 
@@ -189,7 +191,7 @@ namespace Daemon.EntityFramework.Core.AbstractClasses
         /// <param name="colMatchInfo"></param>
         /// <returns></returns>
         public virtual string Where(Expression expression,
-            IDictionary<string, KeyValuePair<string, string>> colMatchInfo)
+            IEnumerable<Tuple<string, string, string>> colMatchInfo)
         {
             if (expression == null)
             {
@@ -249,7 +251,18 @@ namespace Daemon.EntityFramework.Core.AbstractClasses
             {
                 //使用对照关系生成 Table.ColumnName
                 var memExp = expression as MemberExpression;
-                return $"{colMatchInfo[memExp.Member.Name].Key}.{colMatchInfo[memExp.Member.Name].Value}";
+                if (memExp.Expression is ParameterExpression)
+                {
+                    var info = colMatchInfo.First(p => p.Item1 == memExp.Member.Name);
+                    return $"{info.Item3}.{info.Item2}";
+                }
+                else
+                {
+                    if (memExp.Member.Name == "Length")
+                    {
+                        return $" length({Where(memExp.Expression, colMatchInfo)}) ";
+                    }
+                }
             }
             else if (expression is ConstantExpression)
             {
@@ -274,7 +287,33 @@ namespace Daemon.EntityFramework.Core.AbstractClasses
                     }
                 }
             }
-
+            else if (expression is MethodCallExpression)
+            {
+                var method = expression as MethodCallExpression;
+                var methodName = method.Method.Name;
+                var obj = (method.Object as MemberExpression);
+                var propName = obj.Member.Name;
+                var exp = string.Empty;
+                if (obj.Member.DeclaringType.IsAnonymousType())
+                {
+                    var info = colMatchInfo.First(p => p.Item1 == propName);
+                    exp = $"{info.Item3}.{info.Item2}";
+                }
+                else
+                {
+                    exp = $"{obj.Member.DeclaringType.Name}.{propName}";
+                }
+                if (methodName.ToLower() == "contains")
+                {
+                    var args = method.Arguments[0].ToString();
+                    return $" {exp} like '%{args.Substring(1, args.Length - 2)}%'";
+                }
+                else if (methodName.ToLower() == "startswith")
+                {
+                    var args = method.Arguments[0].ToString();
+                    return $" {exp} like '{args.Substring(1, args.Length - 2)}%'";
+                }
+            }
             throw new ArgumentException("Invaild Where Expression!");
         }
     }
