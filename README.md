@@ -43,4 +43,4 @@
     public DBTable<SUBJECT> Subject { get; set; }
     public DBTable<V_STATS> VStats { get; set; }
 ```
-4. <font color=red>**实在看不懂就看下`Daemon.EntityFramework.MSSqliteTes`这个工程**</font>
+4. <font color=red>实在看不懂就看下`Daemon.EntityFramework.MSSqliteTes`这个工程</font>
