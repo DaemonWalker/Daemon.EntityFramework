@@ -1,4 +1,4 @@
-﻿using Daemon.EntityFramework.Core.Attrbutes;
+﻿using Daemon.EntityFramework.Core.Attributes;
 using Daemon.EntityFramework.Core.EntityTracker;
 using Daemon.EntityFramework.Core.Enums;
 using Daemon.EntityFramework.Core.Exceptions;
@@ -15,11 +15,9 @@ namespace Daemon.EntityFramework.Core
 {
     public class DBTable<TEntity> : IQueryable<TEntity>, IOrderedQueryable<TEntity>, IDisposable where TEntity : class
     {
-        private Dictionary<TEntity, EntityEntry<TEntity>> entityDict = new Dictionary<TEntity, EntityEntry<TEntity>>();
-        private Dictionary<object, TEntity> pkDict = new Dictionary<object, TEntity>();
-        private PropertyInfo entityPKProp;
-        public bool DetectEntityChange { get; set; } = true;
-        public DefSettings DefSettings { get; set; }
+        protected Dictionary<TEntity, EntityEntry<TEntity>> entityDict = new Dictionary<TEntity, EntityEntry<TEntity>>();
+        protected PropertyInfo entityPKProp;
+        protected Dictionary<object, TEntity> pkDict = new Dictionary<object, TEntity>();
         public DBTable()
         {
             this.expression = Expression.Constant(this);
@@ -27,19 +25,16 @@ namespace Daemon.EntityFramework.Core
 
         }
 
-        public DBTable(IQueryProvider queryProvider,Expression expression)
+        public DBTable(IQueryProvider queryProvider, Expression expression)
         {
             this.expression = expression;
         }
+
+        public DefSettings DefSettings { get; set; }
+        public bool DetectEntityChange { get; set; } = true;
         #region 4Select
-        private IQueryProvider provider
-        {
-            get
-            {
-                return DefSettings.GetQueryProvider<TEntity>();
-            }
-        }
-        private Expression expression;
+        protected Expression expression;
+
         public Type ElementType
         {
             get
@@ -63,7 +58,15 @@ namespace Daemon.EntityFramework.Core
                 return this.provider;
             }
         }
-        public IEnumerator<TEntity> GetEnumerator()
+
+        protected IQueryProvider provider
+        {
+            get
+            {
+                return DefSettings.GetQueryProvider<TEntity>();
+            }
+        }
+        public virtual IEnumerator<TEntity> GetEnumerator()
         {
             var result = this.provider.Execute<List<TEntity>>(expression);
             if (result == null)
@@ -77,6 +80,11 @@ namespace Daemon.EntityFramework.Core
             }
         }
 
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            throw new NotImplementedException();
+        }
+
         public void InsertEntityEntry(TEntity entity)
         {
             var pk = this.entityPKProp.GetValue(entity);
@@ -87,10 +95,6 @@ namespace Daemon.EntityFramework.Core
             var entry = new EntityEntry<TEntity>(entity, EntityState.Select);
             this.entityDict.Add(entity, entry);
             this.pkDict.Add(pk, entity);
-        }
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            throw new NotImplementedException();
         }
         #endregion
         public virtual EntityEntry<TEntity> Add(TEntity t)
@@ -130,20 +134,10 @@ namespace Daemon.EntityFramework.Core
             }
             return list;
         }
-        public virtual EntityEntry<TEntity> Update(TEntity t)
+        public void Dispose()
         {
-            this.entityDict[t].EntityState = EntityState.Update;
-            return this.entityDict[t];
         }
-        public virtual List<EntityEntry<TEntity>> UpdateRange(IEnumerable<TEntity> ts)
-        {
-            var list = new List<EntityEntry<TEntity>>();
-            foreach (var t in ts)
-            {
-                list.Add(Update(t));
-            }
-            return list;
-        }
+
         public virtual void SaveChanges()
         {
             foreach (var kv in this.pkDict)
@@ -202,23 +196,42 @@ namespace Daemon.EntityFramework.Core
             update = dbConvert.Update(update);
 
         }
-        public void Dispose()
-        {
-        }
 
+        public virtual EntityEntry<TEntity> Update(TEntity t)
+        {
+            this.entityDict[t].EntityState = EntityState.Update;
+            return this.entityDict[t];
+        }
+        public virtual List<EntityEntry<TEntity>> UpdateRange(IEnumerable<TEntity> ts)
+        {
+            var list = new List<EntityEntry<TEntity>>();
+            foreach (var t in ts)
+            {
+                list.Add(Update(t));
+            }
+            return list;
+        }
         protected virtual PropertyInfo GetPKProperty()
         {
             var t = typeof(TEntity);
-            foreach (var prop in t.GetProperties())
+            var attr = Attribute.GetCustomAttribute(t, typeof(EntityTypeAttribute)) as EntityTypeAttribute;
+            if (attr == null || attr.EntityType == EntityType.Table)
             {
-                if (prop.CustomAttributes
-                    .Where(p => p.AttributeType == typeof(PrimaryKeyAttribute))
-                    .Count() != 0)
+                foreach (var prop in t.GetProperties())
                 {
-                    return prop;
+                    if (prop.CustomAttributes
+                        .Where(p => p.AttributeType == typeof(PrimaryKeyAttribute))
+                        .Count() != 0)
+                    {
+                        return prop;
+                    }
                 }
+                throw new NoPrimaryKeyException(t);
             }
-            throw new NoPrimaryKeyException(t);
+            else
+            {
+                return null;
+            }
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿using Daemon.EntityFramework.Core.Attrbutes;
+﻿using Daemon.EntityFramework.Core.Attributes;
 using System;
 using System.Collections.Generic;
 using System.Text;

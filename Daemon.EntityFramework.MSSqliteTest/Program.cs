@@ -12,7 +12,7 @@ namespace Daemon.EntityFramework.MSSqliteTest
     {
         static void Main(string[] args)
         {
-            CountTest();
+            ViewTest();
         }
 
         static void InsertTest()
@@ -55,6 +55,18 @@ namespace Daemon.EntityFramework.MSSqliteTest
                     Console.WriteLine($"{item.STUDENT_NAME} {item.CLASS_NAME} {item.SUBJECT_NAME} {item.POINTS}");
                 }
                 //db.JoinTable.Where(p => p.TEST_ID < 10000).ToList();
+            }
+        }
+
+        static void ViewTest()
+        {
+            using (var db = new SqliteDbContext())
+            {
+                var list = db.VStats.ToList();
+                foreach (var item in list)
+                {
+                    Console.WriteLine($"{item.STUDENT_NAME}\t{item.CLASS_NAME}\t{item.SUBJECT_NAME}\t{item.POINTS}");
+                }
             }
         }
         static void ShowTime(Action action)

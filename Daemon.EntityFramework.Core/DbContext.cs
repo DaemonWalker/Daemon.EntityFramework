@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Daemon.EntityFramework.Core.Utils;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -17,7 +18,17 @@ namespace Daemon.EntityFramework.Core
                 {
                     if (prop.GetValue(this) == null)
                     {
-                        prop.SetValue(this, Activator.CreateInstance(prop.PropertyType));
+                        var dbType = prop.PropertyType.GenericTypeArguments[0];
+                        if (dbType.IsTable())
+                        {
+                            prop.SetValue(this, Activator.CreateInstance(prop.PropertyType));
+                        }
+                        else
+                        {
+                            var viewType = typeof(DBView<>);
+                            viewType = viewType.MakeGenericType(prop.PropertyType.GenericTypeArguments);
+                            prop.SetValue(this, Activator.CreateInstance(viewType));
+                        }
                     }
                     var obj = prop.GetValue(this);
                     tables.Add(obj as IDisposable);

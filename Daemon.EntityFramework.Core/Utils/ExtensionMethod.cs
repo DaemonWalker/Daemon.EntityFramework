@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Daemon.EntityFramework.Core.Attributes;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -33,6 +34,19 @@ namespace Daemon.EntityFramework.Core.Utils
                 && type.IsGenericType && type.Name.Contains("AnonymousType")
                 && (type.Name.StartsWith("<>") || type.Name.StartsWith("VB$"))
                 && (type.Attributes & TypeAttributes.NotPublic) == TypeAttributes.NotPublic;
+        }
+
+        public static bool IsTable(this Type dbType)
+        {
+            var attr = Attribute.GetCustomAttribute(dbType, typeof(EntityTypeAttribute)) as EntityTypeAttribute;
+            if (attr == null || attr.EntityType == Enums.EntityType.Table)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
         }
     }
 }

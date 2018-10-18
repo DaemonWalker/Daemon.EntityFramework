@@ -8,7 +8,7 @@ namespace Daemon.EntityFramework.MSSqliteTest.Sqlite
 {
     class SqliteDataBase : Daemon.EntityFramework.Core.AbstractClasses.DataBase
     {
-        private const string connStr = "data source=db.db";
+        public string ConnStr { get; set; } = "data source=db.db";
         public override DbCommand GetCommand(bool openTranscation)
         {
             this.connection = this.GetConnection();
@@ -23,7 +23,7 @@ namespace Daemon.EntityFramework.MSSqliteTest.Sqlite
 
         public override DbConnection GetConnection()
         {
-            this.connection = new SqliteConnection(connStr);
+            this.connection = new SqliteConnection(ConnStr);
             SQLitePCL.Batteries.Init();
             this.connection.Open();
             return this.connection;

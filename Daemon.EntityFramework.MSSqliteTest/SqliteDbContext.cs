@@ -13,6 +13,7 @@ namespace Daemon.EntityFramework.MSSqliteTest
         public DBTable<CLASS> Class { get; set; }
         public DBTable<STUDENT> Student { get; set; }
         public DBTable<SUBJECT> Subject { get; set; }
+        public DBTable<V_STATS> VStats { get; set; }
         public SqliteDbContext() : base(
             new DefSettings()
             {

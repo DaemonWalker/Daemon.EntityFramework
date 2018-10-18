@@ -1,5 +1,5 @@
 ﻿using Daemon.EntityFramework.Core.AbstractClasses;
-using Daemon.EntityFramework.Core.Attrbutes;
+using Daemon.EntityFramework.Core.Attributes;
 using Daemon.EntityFramework.Core.Exceptions;
 using Daemon.EntityFramework.Core.SqlFormatter;
 using System;
