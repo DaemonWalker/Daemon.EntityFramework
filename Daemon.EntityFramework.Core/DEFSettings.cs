@@ -13,6 +13,11 @@ namespace Daemon.EntityFramework.Core
 {
     public class DefSettings
     {
+        public string CountSqlTemp { get; private set; } = @"select count(1) from {0}";
+        public string DeleteSqlTemp { get; private set; } = @"
+delete from {0}
+where {1}='{2}'";
+
         private DataBase dataBase;
         private DataOperator dataOperator;
         private Dictionary<Type, object> dictQueryPrivider = new Dictionary<Type, object>();
@@ -34,7 +39,7 @@ namespace Daemon.EntityFramework.Core
             }
         }
 
-        public Type DataBaseType { get; set; }
+        public Type DataBaseType { get; private set; }
         public DataOperator DataOperator
         {
             get
@@ -48,7 +53,7 @@ namespace Daemon.EntityFramework.Core
             }
         }
 
-        public Type DataOperatorType { get; set; } = typeof(Daemon.EntityFramework.Core.Demo.DataOperator);
+        public Type DataOperatorType { get; private set; } = typeof(Daemon.EntityFramework.Core.Demo.DataOperator);
         public EntityDBConvert EntityDBConvert
         {
             get
@@ -66,21 +71,15 @@ namespace Daemon.EntityFramework.Core
             }
         }
 
-        public Type EntityDBConvertType { get; set; }
+        public Type EntityDBConvertType { get; private set; }
         public ExpressionAnalyze ExpressionAnalyze { get; set; } = new Daemon.EntityFramework.Core.Demo.ExpressionAnalyze();
-        public Type GetPKAttrType
-        {
-            get
-            {
-                return PrimaryKeyAttribute.GetType();
-            }
-        }
+        public Type GetPKAttrType { get { return PrimaryKeyAttribute.GetType(); } }
 
         public Action<string> OutputAction { get; set; } = sql => Console.WriteLine(new BasicFormatter().Format(sql));
-        public bool OutputSql { get; set; }
+        public bool OutputSql { get; private set; }
         public PrimaryKeyAttribute PrimaryKeyAttribute { get; set; } = new PrimaryKeyAttribute();
-        public Type QueryProviderType { get; set; } = typeof(Daemon.EntityFramework.Core.Demo.QueryProvider<>);
-        public Type QueryType { get; set; } = typeof(Daemon.EntityFramework.Core.Demo.Query<>);
+        public Type QueryProviderType { get; private set; } = typeof(Daemon.EntityFramework.Core.Demo.QueryProvider<>);
+        public Type QueryType { get; private set; } = typeof(Daemon.EntityFramework.Core.Demo.Query<>);
         public Query<TElement> GetQuery<TElement>()
         {
             var qType = QueryType.MakeGenericType(typeof(TElement));
@@ -109,11 +108,48 @@ namespace Daemon.EntityFramework.Core
             var obj = dictQueryPrivider[typeof(TEntity)];
             return obj as QueryProvider<TEntity>;
         }
+        public DefSettings OpenWriteLog()
+        {
+            this.OutputSql = true;
+            return this;
+        }
 
-        public string DeleteSqlTemp = @"
-delete from {0}
-where {1}='{2}'";
+        public DefSettings OpenWriteLog(Action<string> action)
+        {
+            OutputAction = action;
+            return this;
+        }
 
-        public string CountSqlTemp = @"select count(1) from {0}";
+        public DefSettings RegisterType<T>()
+        {
+            var type = typeof(T);
+            if (typeof(DataBase).IsAssignableFrom(type))
+            {
+                this.DataBaseType = type;
+            }
+            else if (typeof(EntityDBConvert).IsAssignableFrom(type))
+            {
+                this.EntityDBConvertType = type;
+            }
+            else if (typeof(DataOperator).IsAssignableFrom(type))
+            {
+                this.DataOperatorType = type;
+            }
+            else if (type.GetInterfaces().Count(p => p == typeof(IQueryProvider)) > 0)
+            {
+                this.QueryProviderType = type;
+            }
+            else if (type.GetInterfaces().Count(p => p.IsGenericType && p.GetGenericTypeDefinition() == typeof(IQueryable<>)) > 0)
+            {
+                this.QueryType = type;
+            }
+            return this;
+        }
+
+        public DefSettings SetDeleteSqlTemp(string temp)
+        {
+            this.DeleteSqlTemp = temp;
+            return this;
+        }
     }
 }

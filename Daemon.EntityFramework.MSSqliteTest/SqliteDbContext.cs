@@ -16,11 +16,9 @@ namespace Daemon.EntityFramework.MSSqliteTest
         public DBTable<V_STATS> VStats { get; set; }
         public SqliteDbContext() : base(
             new DefSettings()
-            {
-                DataBaseType = typeof(SqliteDataBase),
-                EntityDBConvertType = typeof(SqliteEntityDBConvert),
-                OutputSql = true
-            })
+            .RegisterType<SqliteDataBase>()
+            .RegisterType<SqliteEntityDBConvert>()
+            .OpenWriteLog())
         { }
     }
 }

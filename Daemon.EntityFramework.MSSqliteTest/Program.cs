@@ -12,7 +12,7 @@ namespace Daemon.EntityFramework.MSSqliteTest
     {
         static void Main(string[] args)
         {
-            ViewTest();
+            CountTest();
         }
 
         static void InsertTest()
@@ -36,21 +36,19 @@ namespace Daemon.EntityFramework.MSSqliteTest
         {
             using (var db = new SqliteDbContext())
             {
-                var list = db.Student.Join(db.Class,
-                    p => new { p.CLASS_ID },
-                    p => new { p.CLASS_ID },
-                    (pl, pr) => new { pl.STUDENT_ID, pl.STUDENT_NAME, pr.CLASS_NAME })
-                    .Join(db.Score,
-                    p => new { p.STUDENT_ID },
-                    p => new { p.STUDENT_ID },
-                    (pl, pr) => new { pl.STUDENT_NAME, pl.CLASS_NAME, pr.SUBJECT_ID, pr.POINTS })
-                    .Join(db.Subject,
+                var l1 = db.Student.Join(db.Class,
+                    p => p.CLASS_ID,
+                    p => p.CLASS_ID,
+                    (pl, pr) => new { pl.CLASS_ID, pl.STUDENT_ID, pl.STUDENT_NAME, pr.CLASS_NAME });
+                var l2 = db.Score.Join(db.Subject,
                     p => p.SUBJECT_ID,
                     p => p.SUBJECT_ID,
-                    (pl, pr) => new { pl.STUDENT_NAME, pl.CLASS_NAME, pr.SUBJECT_NAME, pl.POINTS })
-                    .Where(p => p.STUDENT_NAME.Length == 5)
-                    .ToList();
-                foreach (var item in list)
+                    (pl, pr) => new { pl.SCORE_ID, pl.STUDENT_ID, pl.SUBJECT_ID, pl.POINTS, pr.SUBJECT_NAME });
+                var l3 = l1.Join(l2,
+                     p => p.STUDENT_ID,
+                     p => p.STUDENT_ID,
+                     (pl, pr) => new { pl.STUDENT_NAME, pl.CLASS_NAME, pr.SUBJECT_NAME, pr.POINTS });
+                foreach (var item in l3)
                 {
                     Console.WriteLine($"{item.STUDENT_NAME} {item.CLASS_NAME} {item.SUBJECT_NAME} {item.POINTS}");
                 }

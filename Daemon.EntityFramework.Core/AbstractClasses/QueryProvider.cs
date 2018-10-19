@@ -76,8 +76,6 @@ namespace Daemon.EntityFramework.Core.AbstractClasses
 
             //Join连接条件对照
             Dictionary<Type, List<KeyValuePair<string, string>>> joinOnDict = new Dictionary<Type, List<KeyValuePair<string, string>>>();
-            //Join生成新实体对照关系
-            Dictionary<Type, List<Tuple<string, string, string>>> joinSelectDict = new Dictionary<Type, List<Tuple<string, string, string>>>();
             //Join生成新实体类型
             Type joinSelectType = null;
 
@@ -228,14 +226,10 @@ namespace Daemon.EntityFramework.Core.AbstractClasses
                         joinOnDict.Remove(joinOnDict.Keys.ElementAt(i));
                     }
                 }
-                var method = convert.GetType().GetMethod("Join").MakeGenericMethod(joinSelectType);
                 var selectInfo = new List<Tuple<string, string, string>>();
+                var mapRelation = new List<Tuple<string, string, string>>();
                 foreach (var item in joinSelectList)
                 {
-                    if (item.Item1 != joinSelectType)
-                    {
-                        continue;
-                    }
                     Tuple<Type, string> tempItem = null;
                     if (item.Item3.IsAnonymousType())
                     {
@@ -245,9 +239,16 @@ namespace Daemon.EntityFramework.Core.AbstractClasses
                     {
                         tempItem = new Tuple<Type, string>(item.Item3, item.Item4);
                     }
-                    selectInfo.Add(new Tuple<string, string, string>(item.Item2, tempItem.Item2, tempItem.Item1.Name));
+                    mapRelation.Add(new Tuple<string, string, string>(item.Item2, tempItem.Item2, tempItem.Item1.Name));
+                    if (item.Item1 == joinSelectType)
+                    {
+                        selectInfo.Add(new Tuple<string, string, string>(item.Item2, tempItem.Item2, tempItem.Item1.Name));
+                    }
                 }
-                result = method.Invoke(convert, new object[] { joinOnDict, selectInfo, whereParms, orderbyParm });
+
+                //反射执行方法
+                var method = convert.GetType().GetMethod("Join").MakeGenericMethod(joinSelectType);
+                result = method.Invoke(convert, new object[] { joinOnDict, selectInfo, whereParms, orderbyParm, mapRelation });
             }
             //单表操作 
             //如果需要排序

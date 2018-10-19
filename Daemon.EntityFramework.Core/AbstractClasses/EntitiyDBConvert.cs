@@ -90,7 +90,8 @@ namespace Daemon.EntityFramework.Core.AbstractClasses
             IDictionary<Type, List<KeyValuePair<string, string>>> joinInfo,
             IEnumerable<Tuple<string, string, string>> selectInfo,
             IDictionary<string, LambdaExpression> whereInfo,
-            LambdaExpression orderByInfo)
+            LambdaExpression orderByInfo,
+            IEnumerable<Tuple<string, string, string>> mapRelation)
         {
             var sql = new StringBuilder("select ");
             foreach (var tuple in selectInfo)
@@ -133,7 +134,7 @@ namespace Daemon.EntityFramework.Core.AbstractClasses
                     {
                         sql.AppendFormat("{0} and ",
                             DefSettings.ExpressionAnalyze.Where(
-                                lambda.Value, selectInfo));
+                                lambda.Value, mapRelation));
                     }
                     else
                     {
