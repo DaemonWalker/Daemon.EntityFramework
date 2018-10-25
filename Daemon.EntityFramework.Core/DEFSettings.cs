@@ -78,6 +78,7 @@ where {1}='{2}'";
         public Action<string> OutputAction { get; set; } = sql => Console.WriteLine(new BasicFormatter().Format(sql));
         public bool OutputSql { get; private set; }
         public PrimaryKeyAttribute PrimaryKeyAttribute { get; set; } = new PrimaryKeyAttribute();
+
         public Type QueryProviderType { get; private set; } = typeof(Daemon.EntityFramework.Core.Demo.QueryProvider<>);
         public Type QueryType { get; private set; } = typeof(Daemon.EntityFramework.Core.Demo.Query<>);
         public Query<TElement> GetQuery<TElement>()
@@ -87,13 +88,18 @@ where {1}='{2}'";
             q.DefSettings = this;
             return q;
         }
-
         public Query<TElement> GetQuery<TElement>(IQueryProvider queryProvider, Expression expression)
         {
             var qType = QueryType.MakeGenericType(typeof(TElement));
             var q = (Activator.CreateInstance(qType, queryProvider, expression) as Query<TElement>);
             q.DefSettings = this;
             return q;
+        }
+
+        public Type DefExpressionVisitorType { get; private set; } = typeof(Daemon.EntityFramework.Core.Demo.DefExpressionVisitor);
+        public DefExpressionVisitor GetDefExpressionVisitor()
+        {
+            return Activator.CreateInstance(this.DefExpressionVisitorType) as DefExpressionVisitor;
         }
 
         public QueryProvider<TEntity> GetQueryProvider<TEntity>()
@@ -142,6 +148,10 @@ where {1}='{2}'";
             else if (type.GetInterfaces().Count(p => p.IsGenericType && p.GetGenericTypeDefinition() == typeof(IQueryable<>)) > 0)
             {
                 this.QueryType = type;
+            }
+            else if (typeof(T).IsSubclassOf(typeof(DefExpressionVisitor)))
+            {
+                this.DefExpressionVisitorType = typeof(T);
             }
             return this;
         }

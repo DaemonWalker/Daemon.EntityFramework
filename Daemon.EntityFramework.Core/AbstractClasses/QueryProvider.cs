@@ -50,6 +50,7 @@ namespace Daemon.EntityFramework.Core.AbstractClasses
         /// <returns></returns>
         public virtual TResult Execute<TResult>(Expression expression)
         {
+            expression = this.DefSettings.GetDefExpressionVisitor().Visit(expression);
             //使用栈存储剩余未处理的MethodCallExpression表达式
             var methodStack = new Stack<MethodCallExpression>();
 

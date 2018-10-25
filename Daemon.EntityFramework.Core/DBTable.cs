@@ -13,7 +13,7 @@ using System.Text;
 
 namespace Daemon.EntityFramework.Core
 {
-    public class DBTable<TEntity> : IQueryable<TEntity>, IOrderedQueryable<TEntity>, IDisposable where TEntity : class
+    public class DBTable<TEntity> : IQueryable<TEntity>, IOrderedQueryable<TEntity>, IDisposable
     {
         protected Dictionary<TEntity, EntityEntry<TEntity>> entityDict = new Dictionary<TEntity, EntityEntry<TEntity>>();
         protected PropertyInfo entityPKProp;

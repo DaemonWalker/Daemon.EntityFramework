@@ -12,7 +12,7 @@ namespace Daemon.EntityFramework.MSSqliteTest
     {
         static void Main(string[] args)
         {
-            CountTest();
+            ViewTest();
         }
 
         static void InsertTest()
@@ -58,9 +58,10 @@ namespace Daemon.EntityFramework.MSSqliteTest
 
         static void ViewTest()
         {
+            var str = "";
             using (var db = new SqliteDbContext())
             {
-                var list = db.VStats.ToList();
+                var list = db.VStats.Where(p => p.CLASS_NAME == str && p.POINTS == 9).ToList();
                 foreach (var item in list)
                 {
                     Console.WriteLine($"{item.STUDENT_NAME}\t{item.CLASS_NAME}\t{item.SUBJECT_NAME}\t{item.POINTS}");

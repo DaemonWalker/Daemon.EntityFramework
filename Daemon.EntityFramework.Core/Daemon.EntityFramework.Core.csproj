@@ -7,7 +7,7 @@
     <Description>A Simple ORM Demo</Description>
     <PackageProjectUrl>https://github.com/DaemonWalker/Daemon.EntityFramework</PackageProjectUrl>
     <RepositoryType>git</RepositoryType>
-    <Version>0.3.3</Version>
+    <Version>0.3.4</Version>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Copyright></Copyright>
   </PropertyGroup>
